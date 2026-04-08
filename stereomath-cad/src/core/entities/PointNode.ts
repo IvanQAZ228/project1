@@ -22,7 +22,8 @@ export class PointNode extends BaseNode {
       id: this.id,
       type: NodeType.POINT,
       name: this.name,
-      dependencies: this.dependencies,
+      parents: this.parents,
+      children: this.children,
       visible: this.visible,
       position: this.position,
       isConstrained: this.isConstrained
