@@ -14,9 +14,9 @@ export class SolidNode extends BaseNode {
 
   compute(graphNodes: Record<string, AnyNode>): void {
     // Update vertices if they depend on specific point nodes
-    if (this.dependencies.length > 0) {
+    if (this.parents.length > 0) {
         // For our Cube/Pyramid logic, we map dependencies 1:1 to vertices if lengths match
-        const pointDeps = this.dependencies.filter(id => graphNodes[id]?.type === NodeType.POINT);
+        const pointDeps = this.parents.filter((id: string) => graphNodes[id]?.type === NodeType.POINT);
         if (pointDeps.length === this.vertices.length) {
             for (let i = 0; i < pointDeps.length; i++) {
                 const pNode = graphNodes[pointDeps[i]] as IPointNode;

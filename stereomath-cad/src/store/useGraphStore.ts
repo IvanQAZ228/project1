@@ -43,12 +43,12 @@ export const useGraphStore = create<GraphState>((set, get) => {
     },
 
     removeNode: (id: string) => {
-      daGraph.removeNode(id);
+      const deletedIds = daGraph.cascadeDelete(id);
       const newNodes = daGraph.toStateNodes();
       saveToLocalStorage(newNodes);
       set((state) => ({
         nodes: newNodes,
-        selectedNodeIds: state.selectedNodeIds.filter(selectedId => selectedId !== id)
+        selectedNodeIds: state.selectedNodeIds.filter(selectedId => !deletedIds.includes(selectedId))
       }));
     },
 

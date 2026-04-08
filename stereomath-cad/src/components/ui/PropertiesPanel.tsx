@@ -70,9 +70,9 @@ export const PropertiesPanel = () => {
         <div><strong>Имя:</strong> {node.name}</div>
         <div><strong>Тип:</strong> {node.type}</div>
 
-        {node.dependencies.length > 0 && (
+        {node.parents.length > 0 && (
             <div className="text-xs text-slate-500 bg-slate-100 p-1 rounded">
-                Зависит от: {node.dependencies.map(id => nodes[id]?.name).filter(Boolean).join(', ')}
+                Зависит от: {node.parents.map((id: string) => nodes[id]?.name).filter(Boolean).join(', ')}
             </div>
         )}
 
