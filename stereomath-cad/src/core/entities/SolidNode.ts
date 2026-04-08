@@ -37,7 +37,8 @@ export class SolidNode extends BaseNode {
       id: this.id,
       type: NodeType.SOLID,
       name: this.name,
-      dependencies: this.dependencies,
+      parents: this.parents,
+      children: this.children,
       visible: this.visible,
       vertices: this.vertices,
       faces: this.faces
