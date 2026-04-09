@@ -7,12 +7,12 @@ import { RenderMode } from '../../types/store.types';
 export const PropertiesPanel = () => {
   const selectedNodeIds = useGraphStore(state => state.selectedNodeIds);
   const nodes = useGraphStore(state => state.nodes);
+  const renderMode = useUIStore(state => state.renderMode);
+  const setRenderMode = useUIStore(state => state.setRenderMode);
 
   if (selectedNodeIds.length !== 1) return null;
 
   const node = nodes[selectedNodeIds[0]];
-  const renderMode = useUIStore(state => state.renderMode);
-  const setRenderMode = useUIStore(state => state.setRenderMode);
 
   if (!node) return null;
 
