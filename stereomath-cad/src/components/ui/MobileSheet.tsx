@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../../store/useUIStore';
 import { useToolStore } from '../../store/useToolStore';
-import { ToolMode } from '../../types/store.types';
+import { ToolMode, AppMode } from '../../types/store.types';
 import { cn } from './Toolbar';
 import { ChevronUp, Eye, Edit2 } from 'lucide-react';
 
@@ -14,27 +14,29 @@ const tools = [
 ];
 
 export const MobileSheet = () => {
-  const { isMobileSheetOpen, setMobileSheetOpen, isDrawMode, setDrawMode } = useUIStore();
+  const { isMobileSheetOpen, setMobileSheetOpen, appMode, setAppMode } = useUIStore();
   const activeTool = useToolStore(state => state.activeTool);
   const setActiveTool = useToolStore(state => state.setActiveTool);
 
+  const isConstruct = appMode === AppMode.CONSTRUCT;
+
   return (
     <div className="md:hidden">
-      {/* Toggle View/Draw Mode Button */}
+      {/* Toggle View/Construct Mode Button */}
       <div className="absolute bottom-6 right-6 z-20">
         <button
-          onClick={() => setDrawMode(!isDrawMode)}
+          onClick={() => setAppMode(isConstruct ? AppMode.VIEW : AppMode.CONSTRUCT)}
           className={cn(
             "w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-colors text-white",
-            isDrawMode ? "bg-blue-600" : "bg-slate-800"
+            isConstruct ? "bg-blue-600" : "bg-slate-800"
           )}
         >
-          {isDrawMode ? <Edit2 /> : <Eye />}
+          {isConstruct ? <Edit2 /> : <Eye />}
         </button>
       </div>
 
       <AnimatePresence>
-        {isDrawMode && (
+        {isConstruct && (
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: isMobileSheetOpen ? 0 : "calc(100% - 40px)" }}

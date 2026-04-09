@@ -12,8 +12,18 @@ export class DAGraph {
   // Build the graph from JSON state
   load(stateNodes: Record<string, AnyNode>) {
     this.nodes = {};
+
+    // Create all instances
     for (const [id, nodeData] of Object.entries(stateNodes)) {
       this.nodes[id] = this.createNodeInstance(nodeData);
+    }
+
+    // Safety check: ensure graph consistency for children/parents
+    for (const [id, node] of Object.entries(this.nodes)) {
+      // Re-verify that parents exist
+      node.parents = node.parents.filter(pId => this.nodes[pId] !== undefined);
+      // Re-verify that children exist
+      node.children = node.children.filter(cId => this.nodes[cId] !== undefined);
     }
   }
 
@@ -40,6 +50,7 @@ export class DAGraph {
           dependents.add(id);
           queue.push(id);
         }
+
       }
     }
     return Array.from(dependents);
@@ -50,14 +61,37 @@ export class DAGraph {
     const node = this.nodes[id];
     if (!node) return;
 
+    // Save previous parents to detect changes
+    const oldParents = [...node.parents];
+
     // Apply updates
     Object.assign(node, updates);
+
+    // If parents changed, we need to rebuild relationships
+    if (updates.parents) {
+       // Remove node from children array of old parents
+       for (const oldPId of oldParents) {
+           const oldParentNode = this.nodes[oldPId];
+           if (oldParentNode) {
+               oldParentNode.children = oldParentNode.children.filter(cId => cId !== id);
+           }
+       }
+
+       node.parents = [...updates.parents];
+       for (const newPId of node.parents) {
+           const newParentNode = this.nodes[newPId];
+           if (newParentNode) {
+               if (!newParentNode.children.includes(id)) {
+                 newParentNode.children.push(id);
+               }
+           }
+       }
+    }
 
     // Compute the updated node itself first
     node.compute(this.toStateNodes());
 
     // Recompute dependents in topological order
-    // For MVP, a simple BFS is usually sufficient if graph isn't too deep
     const dependents = this.getDependents([id]);
     const stateNodes = this.toStateNodes();
     for (const depId of dependents) {
@@ -69,16 +103,57 @@ export class DAGraph {
   }
 
   addNode(data: AnyNode) {
-    this.nodes[data.id] = this.createNodeInstance(data);
-    this.nodes[data.id].compute(this.toStateNodes());
+    const newNode = this.createNodeInstance(data);
+    this.nodes[data.id] = newNode;
+
+    // Link parents to this new child
+    for (const pId of newNode.parents) {
+        const parentNode = this.nodes[pId];
+        if (parentNode) {
+            if (!parentNode.children.includes(newNode.id)) {
+                parentNode.children.push(newNode.id);
+            }
+        }
+    }
+
+    newNode.compute(this.toStateNodes());
   }
 
-  removeNode(id: string) {
-    const dependents = this.getDependents([id]);
-    for (const depId of dependents) {
-      delete this.nodes[depId];
-    }
-    delete this.nodes[id];
+  /**
+   * Recursively deletes a node and all its dependents.
+   * Returns an array of the IDs of all deleted nodes.
+   */
+  cascadeDelete(id: string): string[] {
+    const deletedIds: string[] = [];
+
+    const deleteRecursively = (nodeId: string) => {
+      const node = this.nodes[nodeId];
+      if (!node) return;
+
+      // 1. Delete all children first
+      const childrenToProcess = [...node.children];
+      for (const childId of childrenToProcess) {
+          deleteRecursively(childId);
+      }
+
+      // Ensure node wasn't already deleted during a previous recursive step
+      if (!this.nodes[nodeId]) return;
+
+      // 2. Remove this node from its parents' children array
+      for (const parentId of node.parents) {
+          const parentNode = this.nodes[parentId];
+          if (parentNode) {
+              parentNode.children = parentNode.children.filter(cId => cId !== nodeId);
+          }
+      }
+
+      // 3. Delete the node itself
+      delete this.nodes[nodeId];
+      deletedIds.push(nodeId);
+    };
+
+    deleteRecursively(id);
+    return deletedIds;
   }
 
   toStateNodes(): Record<string, AnyNode> {
