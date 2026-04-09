@@ -1,8 +1,10 @@
 import { useGraphStore } from '../../store/useGraphStore';
-import { IPointNode, ILineNode, NodeType } from '../../types/graph.types';
+import { IPointNode, ILineNode, IPlaneNode, NodeType } from '../../types/graph.types';
 import * as THREE from 'three';
 import { useUIStore } from '../../store/useUIStore';
 import { RenderMode } from '../../types/store.types';
+import 'katex/dist/katex.min.css';
+import { BlockMath, InlineMath } from 'react-katex';
 
 export const PropertiesPanel = () => {
   const selectedNodeIds = useGraphStore(state => state.selectedNodeIds);
@@ -49,20 +51,43 @@ export const PropertiesPanel = () => {
       }
   }
 
+  const handleCoordChange = (axis: 'x' | 'y' | 'z', value: string) => {
+    if (node.type !== NodeType.POINT) return;
+    const num = parseFloat(value);
+    if (!isNaN(num)) {
+        updateNode(node.id, {
+            position: { ...((node as IPointNode).position), [axis]: num }
+        });
+    }
+  };
+
   return (
-    <div className="absolute top-20 right-4 w-64 bg-white rounded-lg shadow-lg border border-slate-200 z-10 hidden md:block">
+    <div className="absolute top-20 right-4 w-64 bg-white/90 backdrop-blur-md rounded-lg shadow-lg border border-slate-200 z-10 hidden md:block">
       <div className="p-3 border-b border-slate-100 font-semibold text-slate-700">Свойства</div>
       <div className="p-3 text-sm text-slate-600 flex flex-col gap-2">
         <div><strong>Имя:</strong> {node.name}</div>
         <div><strong>Тип:</strong> {node.type}</div>
 
+        {node.parents.length > 0 && (
+            <div className="text-xs text-slate-500 bg-slate-100 p-1 rounded">
+                Зависит от: {node.parents.map((id: string) => nodes[id]?.name).filter(Boolean).join(', ')}
+            </div>
+        )}
+
         {node.type === NodeType.POINT && (
           <div className="flex flex-col gap-1 mt-2">
             <div className="font-medium text-slate-700">Координаты:</div>
-            <div className="font-mono bg-slate-50 p-2 rounded">
-              X: {(node as IPointNode).position.x.toFixed(2)}<br/>
-              Y: {(node as IPointNode).position.y.toFixed(2)}<br/>
-              Z: {(node as IPointNode).position.z.toFixed(2)}
+            <div className="flex items-center gap-2">
+               <span>X:</span>
+               <input type="number" step="0.1" value={(node as IPointNode).position.x} onChange={(e) => handleCoordChange('x', e.target.value)} className="border rounded w-full p-1" />
+            </div>
+            <div className="flex items-center gap-2">
+               <span>Y:</span>
+               <input type="number" step="0.1" value={(node as IPointNode).position.y} onChange={(e) => handleCoordChange('y', e.target.value)} className="border rounded w-full p-1" />
+            </div>
+            <div className="flex items-center gap-2">
+               <span>Z:</span>
+               <input type="number" step="0.1" value={(node as IPointNode).position.z} onChange={(e) => handleCoordChange('z', e.target.value)} className="border rounded w-full p-1" />
             </div>
           </div>
         )}
@@ -70,10 +95,22 @@ export const PropertiesPanel = () => {
         {node.type === NodeType.LINE && (
           <div className="flex flex-col gap-1 mt-2">
             <div className="font-medium text-slate-700">Длина:</div>
-            <div className="font-mono bg-slate-50 p-2 rounded">
-              {length.toFixed(2)} ед.
+            <div className="bg-slate-50 p-2 rounded">
+              <InlineMath math={`L = ${length.toFixed(2)} \\text{ ед.}`} />
             </div>
           </div>
+        )}
+
+        {node.type === NodeType.PLANE && (node as IPlaneNode).equation && (
+            <div className="flex flex-col gap-1 mt-2">
+                <div className="font-medium text-slate-700">Уравнение плоскости:</div>
+                <div className="bg-slate-50 p-2 rounded overflow-x-auto">
+                    {(() => {
+                        const eq = (node as IPlaneNode).equation!;
+                        return <BlockMath math={`${eq.a.toFixed(2)}x + ${eq.b.toFixed(2)}y + ${eq.c.toFixed(2)}z + ${eq.d.toFixed(2)} = 0`} />;
+                    })()}
+                </div>
+            </div>
         )}
 
         {node.type === NodeType.SECTION && (
@@ -99,6 +136,21 @@ export const PropertiesPanel = () => {
                 </select>
             </div>
         )}
+
+        <div className="mt-4 pt-4 border-t border-slate-100">
+            <button
+                onClick={() => removeNode(node.id)}
+                className="w-full py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded border border-red-200 transition-colors font-medium text-sm"
+            >
+                Удалить объект
+            </button>
+            {node.type !== NodeType.POINT && (
+               <div className="text-[10px] text-red-400 mt-1 text-center leading-tight">
+                   Внимание: зависимые объекты также будут удалены.
+               </div>
+            )}
+        </div>
+
       </div>
     </div>
   );

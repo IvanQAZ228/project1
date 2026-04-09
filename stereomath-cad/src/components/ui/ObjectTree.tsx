@@ -18,7 +18,7 @@ export const ObjectTree = () => {
   };
 
   return (
-    <div className="absolute top-20 left-4 w-64 max-h-[calc(100vh-6rem)] overflow-y-auto bg-white rounded-lg shadow-lg border border-slate-200 z-10 hidden md:block">
+    <div className="w-64 max-h-[50vh] overflow-y-auto bg-white rounded-lg shadow-lg border border-slate-200">
       <div className="p-3 border-b border-slate-100 font-semibold text-slate-700">Дерево объектов</div>
       <div className="p-2 flex flex-col gap-1">
         {Object.values(nodes).map(node => (
