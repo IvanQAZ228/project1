@@ -36,7 +36,7 @@ export class DAGraph {
     while (queue.length > 0) {
       const currentId = queue.shift()!;
       for (const [id, node] of Object.entries(this.nodes)) {
-        if (node.dependencies.includes(currentId) && !dependents.has(id)) {
+        if (node.parents.includes(currentId) && !dependents.has(id)) {
           dependents.add(id);
           queue.push(id);
         }

@@ -4,14 +4,14 @@ export abstract class BaseNode {
   id: string;
   type: NodeType;
   name: string;
-  dependencies: string[];
+  parents: string[];
   visible: boolean;
 
   constructor(data: AnyNode) {
     this.id = data.id;
     this.type = data.type;
     this.name = data.name;
-    this.dependencies = data.dependencies || [];
+    this.parents = data.parents || [];
     this.visible = data.visible ?? true;
   }
 

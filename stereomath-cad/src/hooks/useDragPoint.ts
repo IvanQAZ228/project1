@@ -3,10 +3,10 @@ import { useGraphStore } from '../store/useGraphStore';
 import { useToolStore } from '../store/useToolStore';
 import { ToolMode } from '../types/store.types';
 import { NodeType, IPointNode, AnyNode } from '../types/graph.types';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import * as THREE from 'three';
 
-export const useDragPoint = () => {
+export const useDragPoint = (meshRef: React.RefObject<THREE.Mesh | null>) => {
   const { raycaster, camera, pointer } = useThree();
   const nodes = useGraphStore(state => state.nodes);
   const updateNode = useGraphStore(state => state.updateNode);
@@ -14,6 +14,7 @@ export const useDragPoint = () => {
 
   const [draggedPointId, setDraggedPointId] = useState<string | null>(null);
   const [dragPlane, setDragPlane] = useState<THREE.Plane | null>(null);
+  const localPos = useRef<THREE.Vector3 | null>(null);
 
   const onPointerDown = useCallback((e: any, id: string) => {
     if (activeTool !== ToolMode.SELECT) return;
@@ -32,9 +33,13 @@ export const useDragPoint = () => {
   }, [activeTool, nodes, camera]);
 
   const onPointerUp = useCallback(() => {
+    if (draggedPointId && localPos.current) {
+      updateNode(draggedPointId, { position: { x: localPos.current.x, y: localPos.current.y, z: localPos.current.z } });
+    }
     setDraggedPointId(null);
     setDragPlane(null);
-  }, []);
+    localPos.current = null;
+  }, [draggedPointId, updateNode]);
 
   useFrame(() => {
     if (draggedPointId && dragPlane) {
@@ -43,9 +48,10 @@ export const useDragPoint = () => {
       raycaster.ray.intersectPlane(dragPlane, target);
 
       if (target) {
-        updateNode(draggedPointId, {
-          position: { x: target.x, y: target.y, z: target.z }
-        });
+        if (meshRef?.current) {
+          meshRef.current.position.set(target.x, target.y, target.z);
+        }
+        localPos.current = target;
       }
     }
   });

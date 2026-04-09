@@ -25,7 +25,7 @@ export class LineNode extends BaseNode {
       id: this.id,
       type: NodeType.LINE,
       name: this.name,
-      dependencies: this.dependencies,
+      parents: this.parents,
       visible: this.visible,
       startPointId: this.startPointId,
       endPointId: this.endPointId

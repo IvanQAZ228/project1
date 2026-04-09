@@ -12,6 +12,7 @@ import { ToolMode } from '../../types/store.types';
 import * as THREE from 'three';
 import { SnappingEngine } from '../../core/engine/SnappingEngine';
 import { v4 as uuidv4 } from 'uuid';
+import { ThreeEvent } from '@react-three/fiber';
 
 const SceneContent = () => {
   const nodes = useGraphStore(state => state.nodes);
@@ -23,7 +24,16 @@ const SceneContent = () => {
   const setToolStepData = useToolStore(state => state.setToolStepData);
   const setActiveTool = useToolStore(state => state.setActiveTool);
 
-  const handleCanvasClick = (e: any) => {
+  const getNextName = (prefix: string, type: NodeType) => {
+    const existingNames = Object.values(nodes).filter(n => n.type === type).map(n => {
+        const match = n.name.match(new RegExp(`${prefix} (\\d+)`));
+        return match ? parseInt(match[1], 10) : 0;
+    });
+    const max = existingNames.length > 0 ? Math.max(...existingNames) : 0;
+    return `${prefix} ${max + 1}`;
+  };
+
+  const handleCanvasClick = (e: ThreeEvent<PointerEvent>) => {
     if (activeTool === ToolMode.SELECT) {
         if (e.delta > 2) return;
         clearSelection();
@@ -46,8 +56,8 @@ const SceneContent = () => {
         addNode({
           id: targetPointId,
           type: NodeType.POINT,
-          name: `Point ${Object.values(nodes).filter(n => n.type === NodeType.POINT).length + 1}`,
-          dependencies: [],
+          name: getNextName('Point', NodeType.POINT),
+          parents: [],
           visible: true,
           position: { x: targetPos.x, y: targetPos.y, z: targetPos.z }
         });
@@ -67,8 +77,8 @@ const SceneContent = () => {
         addNode({
           id: uuidv4(),
           type: NodeType.LINE,
-          name: `Line ${Object.values(nodes).filter(n => n.type === NodeType.LINE).length + 1}`,
-          dependencies: [toolStepData[0], targetPointId],
+          name: getNextName('Line', NodeType.LINE),
+          parents: [toolStepData[0], targetPointId],
           visible: true,
           startPointId: toolStepData[0],
           endPointId: targetPointId
@@ -95,7 +105,7 @@ const SceneContent = () => {
                 id: vid,
                 type: NodeType.POINT,
                 name: `PVertex ${i+1}`,
-                dependencies: [targetPointId],
+                parents: [targetPointId],
                 visible: true,
                 position: { x: vx, y: vy, z: vz },
                 isConstrained: true
@@ -109,7 +119,7 @@ const SceneContent = () => {
             id: apexId,
             type: NodeType.POINT,
             name: `PApex`,
-            dependencies: [targetPointId],
+            parents: [targetPointId],
             visible: true,
             position: { x: targetPos.x, y: targetPos.y + height, z: targetPos.z },
             isConstrained: true
@@ -119,8 +129,8 @@ const SceneContent = () => {
         addNode({
             id: uuidv4(),
             type: NodeType.SOLID,
-            name: `Pyramid ${Object.values(nodes).filter(n => n.type === NodeType.SOLID).length + 1}`,
-            dependencies: vIds,
+            name: getNextName('Pyramid', NodeType.SOLID),
+            parents: vIds,
             visible: true,
             vertices: vIds.map(id => (nodes[id] as IPointNode)?.position || {x:0, y:0, z:0}),
             faces: [
@@ -151,7 +161,7 @@ const SceneContent = () => {
                 id: vid,
                 type: NodeType.POINT,
                 name: `CVertex ${i+1}`,
-                dependencies: [targetPointId],
+                parents: [targetPointId],
                 visible: true,
                 position: { x: vx, y: vy, z: vz },
                 isConstrained: true // For MVP, tie to center
@@ -162,8 +172,8 @@ const SceneContent = () => {
         addNode({
             id: uuidv4(),
             type: NodeType.SOLID,
-            name: `Cube ${Object.values(nodes).filter(n => n.type === NodeType.SOLID).length + 1}`,
-            dependencies: vIds,
+            name: getNextName('Cube', NodeType.SOLID),
+            parents: vIds,
             visible: true,
             vertices: vIds.map(id => (nodes[id] as IPointNode)?.position || {x:0, y:0, z:0}), // Initial state, will be updated by DAG
             faces: [
@@ -191,8 +201,8 @@ const SceneContent = () => {
                 addNode({
                     id: planeId,
                     type: NodeType.PLANE,
-                    name: `Plane ${Object.values(nodes).filter(n => n.type === NodeType.PLANE).length + 1}`,
-                    dependencies: [p1, p2, p3],
+                    name: getNextName('Plane', NodeType.PLANE),
+                    parents: [p1, p2, p3],
                     visible: true,
                     pointIds: [p1, p2, p3]
                 });
@@ -204,7 +214,7 @@ const SceneContent = () => {
                         id: uuidv4(),
                         type: NodeType.SECTION,
                         name: `Section on ${solid.name}`,
-                        dependencies: [planeId, solid.id],
+                        parents: [planeId, solid.id],
                         visible: true,
                         solidId: solid.id,
                         planeId: planeId,
