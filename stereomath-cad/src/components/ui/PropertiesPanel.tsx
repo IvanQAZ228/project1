@@ -9,14 +9,12 @@ import { BlockMath, InlineMath } from 'react-katex';
 export const PropertiesPanel = () => {
   const selectedNodeIds = useGraphStore(state => state.selectedNodeIds);
   const nodes = useGraphStore(state => state.nodes);
+  const renderMode = useUIStore(state => state.renderMode);
+  const setRenderMode = useUIStore(state => state.setRenderMode);
 
   if (selectedNodeIds.length !== 1) return null;
 
   const node = nodes[selectedNodeIds[0]];
-  const updateNode = useGraphStore(state => state.updateNode);
-  const removeNode = useGraphStore(state => state.removeNode);
-  const renderMode = useUIStore(state => state.renderMode);
-  const setRenderMode = useUIStore(state => state.setRenderMode);
 
   if (!node) return null;
 

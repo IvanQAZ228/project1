@@ -5,7 +5,6 @@ export abstract class BaseNode {
   type: NodeType;
   name: string;
   parents: string[];
-  children: string[];
   visible: boolean;
 
   constructor(data: AnyNode) {
@@ -13,7 +12,6 @@ export abstract class BaseNode {
     this.type = data.type;
     this.name = data.name;
     this.parents = data.parents || [];
-    this.children = data.children || [];
     this.visible = data.visible ?? true;
   }
 

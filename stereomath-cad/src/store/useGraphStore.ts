@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { GraphState, ToolMode, ToolState, UIState } from '../types/store.types';
 import { DAGraph } from '../core/engine/DAGraph';
 import { AnyNode } from '../types/graph.types';
@@ -6,77 +7,57 @@ import { v4 as uuidv4 } from 'uuid';
 
 const daGraph = new DAGraph();
 
-// Try load from localstorage
-const loadInitialState = (): Record<string, AnyNode> => {
-  try {
-    const saved = localStorage.getItem('stereomath_graph');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      daGraph.load(parsed);
-      return daGraph.toStateNodes();
-    }
-  } catch (e) {
-    console.error("Failed to load graph", e);
-  }
-  return {};
-};
+export const useGraphStore = create<GraphState>()(
+  persist(
+    (set, get) => ({
+      nodes: {},
+      selectedNodeIds: [],
 
-const saveToLocalStorage = (nodes: Record<string, AnyNode>) => {
-  localStorage.setItem('stereomath_graph', JSON.stringify(nodes));
-};
+      addNode: (node: AnyNode) => {
+        if (!node.id) node.id = uuidv4();
+        daGraph.addNode(node);
+        set({ nodes: daGraph.toStateNodes() });
+      },
 
-export const useGraphStore = create<GraphState>((set, get) => {
-  // Initialize DAGraph with initial state
-  const initialNodes = loadInitialState();
+      removeNode: (id: string) => {
+        daGraph.removeNode(id);
+        set((state) => ({
+          nodes: daGraph.toStateNodes(),
+          selectedNodeIds: state.selectedNodeIds.filter(selectedId => selectedId !== id)
+        }));
+      },
 
-  return {
-    nodes: initialNodes,
-    selectedNodeIds: [],
+      updateNode: (id: string, data: Partial<AnyNode>) => {
+        daGraph.updateNode(id, data);
+        set({ nodes: daGraph.toStateNodes() });
+      },
 
-    addNode: (node: AnyNode) => {
-      // Create new id if not provided (should be provided, but safe fallback)
-      if (!node.id) node.id = uuidv4();
-      daGraph.addNode(node);
-      const newNodes = daGraph.toStateNodes();
-      saveToLocalStorage(newNodes);
-      set({ nodes: newNodes });
-    },
-
-    removeNode: (id: string) => {
-      const deletedIds = daGraph.cascadeDelete(id);
-      const newNodes = daGraph.toStateNodes();
-      saveToLocalStorage(newNodes);
-      set((state) => ({
-        nodes: newNodes,
-        selectedNodeIds: state.selectedNodeIds.filter(selectedId => !deletedIds.includes(selectedId))
-      }));
-    },
-
-    updateNode: (id: string, data: Partial<AnyNode>) => {
-      daGraph.updateNode(id, data);
-      const newNodes = daGraph.toStateNodes();
-      saveToLocalStorage(newNodes);
-      set({ nodes: newNodes });
-    },
-
-    selectNode: (id: string, multi: boolean = false) => {
-      set((state) => {
-        if (multi) {
-          if (state.selectedNodeIds.includes(id)) {
-            return { selectedNodeIds: state.selectedNodeIds.filter(sid => sid !== id) };
+      selectNode: (id: string, multi: boolean = false) => {
+        set((state) => {
+          if (multi) {
+            if (state.selectedNodeIds.includes(id)) {
+              return { selectedNodeIds: state.selectedNodeIds.filter(sid => sid !== id) };
+            }
+            return { selectedNodeIds: [...state.selectedNodeIds, id] };
           }
-          return { selectedNodeIds: [...state.selectedNodeIds, id] };
+          return { selectedNodeIds: [id] };
+        });
+      },
+
+      clearSelection: () => set({ selectedNodeIds: [] }),
+
+      clearGraph: () => {
+        daGraph.load({});
+        set({ nodes: {}, selectedNodeIds: [] });
+      }
+    }),
+    {
+      name: 'stereomath_graph',
+      onRehydrateStorage: () => (state) => {
+        if (state && state.nodes) {
+          daGraph.load(state.nodes);
         }
-        return { selectedNodeIds: [id] };
-      });
-    },
-
-    clearSelection: () => set({ selectedNodeIds: [] }),
-
-    clearGraph: () => {
-      daGraph.load({});
-      saveToLocalStorage({});
-      set({ nodes: {}, selectedNodeIds: [] });
+      }
     }
-  };
-});
+  )
+);

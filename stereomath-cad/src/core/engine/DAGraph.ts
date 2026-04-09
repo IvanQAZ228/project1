@@ -45,14 +45,12 @@ export class DAGraph {
 
     while (queue.length > 0) {
       const currentId = queue.shift()!;
-      const node = this.nodes[currentId];
-      if (!node) continue;
+      for (const [id, node] of Object.entries(this.nodes)) {
+        if (node.parents.includes(currentId) && !dependents.has(id)) {
+          dependents.add(id);
+          queue.push(id);
+        }
 
-      for (const childId of node.children) {
-          if (!dependents.has(childId)) {
-              dependents.add(childId);
-              queue.push(childId);
-          }
       }
     }
     return Array.from(dependents);

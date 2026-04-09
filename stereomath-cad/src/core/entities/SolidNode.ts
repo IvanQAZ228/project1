@@ -15,8 +15,8 @@ export class SolidNode extends BaseNode {
   compute(graphNodes: Record<string, AnyNode>): void {
     // Update vertices if they depend on specific point nodes
     if (this.parents.length > 0) {
-        // For our Cube/Pyramid logic, we map dependencies 1:1 to vertices if lengths match
-        const pointDeps = this.parents.filter((id: string) => graphNodes[id]?.type === NodeType.POINT);
+        // For our Cube/Pyramid logic, we map parents 1:1 to vertices if lengths match
+        const pointDeps = this.parents.filter(id => graphNodes[id]?.type === NodeType.POINT);
         if (pointDeps.length === this.vertices.length) {
             for (let i = 0; i < pointDeps.length; i++) {
                 const pNode = graphNodes[pointDeps[i]] as IPointNode;
@@ -25,7 +25,7 @@ export class SolidNode extends BaseNode {
                 }
             }
         } else if (pointDeps.length === 1 && this.vertices.length > 1) {
-             // Dragging the center point (the only dependency). We need to calculate delta and apply it.
+             // Dragging the center point (the only parent). We need to calculate delta and apply it.
              // This is handled in a more complex setup by the DAG, but for MVP we assume the points
              // themselves were updated.
         }
@@ -38,7 +38,6 @@ export class SolidNode extends BaseNode {
       type: NodeType.SOLID,
       name: this.name,
       parents: this.parents,
-      children: this.children,
       visible: this.visible,
       vertices: this.vertices,
       faces: this.faces

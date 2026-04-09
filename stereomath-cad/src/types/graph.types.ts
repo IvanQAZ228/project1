@@ -13,7 +13,6 @@ export interface IBaseNode {
   type: NodeType;
   name: string;
   parents: string[]; // IDs of nodes this node depends on
-  children: string[]; // IDs of nodes that depend on this node
   visible: boolean;
 }
 

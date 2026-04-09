@@ -30,7 +30,6 @@ export class SectionNode extends BaseNode {
       type: NodeType.SECTION,
       name: this.name,
       parents: this.parents,
-      children: this.children,
       visible: this.visible,
       solidId: this.solidId,
       planeId: this.planeId,

@@ -40,7 +40,6 @@ export class PlaneNode extends BaseNode {
       type: NodeType.PLANE,
       name: this.name,
       parents: this.parents,
-      children: this.children,
       visible: this.visible,
       pointIds: this.pointIds,
       equation: this.equation
